@@ -41,6 +41,7 @@ type GameAction =
     // combine deal player cards and deal start cards into one action
     | DealCard of Deck
     | Finish
+    | Unknown
 
 type PlayerAction =
     | PlayHand
@@ -84,8 +85,6 @@ let initialState =
       PlayedStack = []
       PlayerTurn = 0 }
 
-printfn "Initial State: %A" initialState
-
 let contains element list =
     List.exists (fun elem -> elem = element) list
 
@@ -106,7 +105,7 @@ let sevenDiamonds =
 
 let simpleDeck = [ threeDiamonds; fiveDiamonds ]
 
-printfn "Initial State: %A" initialState
+
 printfn "For list %A, contains card 3D is %b" simpleDeck (contains threeDiamonds simpleDeck)
 printfn "For list %A, contains card 7D is %b" simpleDeck (contains sevenDiamonds simpleDeck)
 
@@ -120,3 +119,80 @@ let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
     List.concat mergedLists
 
 let createDeck = cartesianProduct suits values
+
+let inputToGameAction (inputList) : GameAction =
+    if List.length inputList > 2 then
+        printfn "Too many commands!!"
+        Unknown
+    else
+        match inputList with
+        | head :: second :: _ ->
+            match head, second with
+            | "start", num -> Start(num |> int)
+            | "add_player", name -> AddPlayer name
+
+            | (_, _) ->
+                printfn "Unknown command"
+                Unknown
+        | head :: _ ->
+            printfn $"Only one command provided: {head}"
+
+            match head with
+            | "add_deck" -> AddDeck createDeck
+            | other ->
+                printfn $"Unknown command: {other}"
+                Unknown
+        | [] ->
+            printfn "The command list is empty"
+            Unknown
+
+let transition state action =
+    match state.Status, action with
+    | NotStarted, Start(numPlayers) when numPlayers >= minPlayers && numPlayers <= maxPlayers ->
+        { state with
+            Status = Lobby
+            NumPlayers = numPlayers }
+    | NotStarted, Start(numPlayers) when numPlayers < minPlayers ->
+        printfn "Not enough players. You need at least {maxPlayers} players. Please try again."
+        state
+    | NotStarted, Start(numPlayers) when numPlayers > maxPlayers ->
+        printfn $"Too many players. Max allowed players is {maxPlayers}. Please try again."
+        state
+    | NotStarted, _ ->
+        printfn $"Invalid action."
+        state
+    | Lobby, _ -> state
+    | AwaitingDeck, _ -> state
+    | AwaitingPlayerCards, _ -> state
+    | _ -> state
+
+
+// Define the function that transitions between states
+// let transition state input =
+//     match state, input with
+//     | StateA, "next" -> StateB
+//     | StateB, "next" -> StateC
+//     | _, _ -> state // No transition on invalid input
+
+
+let rec runStateMachine state =
+    match state.Status with
+    | GameOver ->
+        printfn "Game over. Exiting."
+        0
+    | _ ->
+        // Print the current state
+        printfn "Current state: %A" state
+
+        // Ask for user input
+        printfn "Please enter the next command.."
+        let input = System.Console.ReadLine()
+
+        // Translate the input to an action
+        let gameAction = inputToGameAction (input.Split([| ' ' |]) |> Array.toList)
+
+        // Compute the next state based on input
+        let nextState = transition state gameAction
+
+        // Recursively run the state machine with the new state
+        runStateMachine nextState
