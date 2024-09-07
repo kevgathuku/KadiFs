@@ -55,8 +55,7 @@ type GameStatus =
     | NotStarted
     | Lobby
     | AwaitingDeck
-    | AwaitingPlayerCards
-    | AwaitingStartCard
+    | AwaitingAssignCards
     | Live
     | Kadi
     | GameOver
@@ -90,7 +89,7 @@ let initialState =
 let contains element list =
     List.exists (fun elem -> elem = element) list
 
-let getFirstAllowedCard (deck: Deck) (blocklist: CardValue list) =
+let getStartCard (deck: Deck) (blocklist: CardValue list) =
     List.find (fun card -> not (contains card.Value blocklist)) deck
 
 let threeDiamonds =
@@ -200,14 +199,13 @@ let transition action state =
     | Lobby, other ->
         printfn $"Unsupported action: {other}"
         state
-
     | AwaitingDeck, AddDeck(newDeck) ->
         let shuffledDeck = List.randomShuffle newDeck
 
         { state with
             PickDeck = shuffledDeck
-            Status = AwaitingPlayerCards }
-    | AwaitingPlayerCards, DealCards ->
+            Status = AwaitingAssignCards }
+    | AwaitingAssignCards, DealCards ->
         let assignPlayerCards player deck =
             let playerCards, remainingCards = List.splitAt 4 deck
 
@@ -220,12 +218,16 @@ let transition action state =
         let updatedPlayers, updatedDeck =
             mapReduce assignPlayerCards state.PickDeck state.Players
 
-        { state with
-            PickDeck = updatedDeck
-            Players = updatedPlayers
-            Status = AwaitingStartCard
-             }
+        let startCard = getStartCard updatedDeck startBlocklist
 
+        let remainingDeck =
+            List.filter (fun card -> card.Suit <> startCard.Suit && card.Value <> startCard.Value) updatedDeck
+
+        { state with
+            PickDeck = remainingDeck
+            PlayedStack = [startCard]
+            Players = updatedPlayers
+            Status = Live }
     | _ -> state
 
 
