@@ -21,6 +21,7 @@ type CardValue =
     | K
     | A
 
+[<StructuralComparison; StructuralEquality>]
 type Card = { Suit: Suit; Value: CardValue }
 
 type Deck = Card list
@@ -36,20 +37,24 @@ type Player =
       Name: string
       State: PlayerState }
 
+type PlayerAction =
+    | PlayHand of Card list
+    | AcceptPick
+    | NoCardsPick
+    | Jump
+    | Kickback
+    | Kadi
+    | Finish
+
 type GameAction =
     | Start of int
     | AddPlayer of string
     | AddDeck of Deck
     // Deal cards to players and deal start card
     | DealCards
+    | ProcessPlayerAction of PlayerAction
     | Finish
     | Unknown
-
-type PlayerAction =
-    | PlayHand
-    | Pick
-    | Kadi
-    | Finish
 
 type GameStatus =
     | NotStarted
@@ -225,9 +230,48 @@ let transition action state =
 
         { state with
             PickDeck = remainingDeck
-            PlayedStack = [startCard]
+            PlayedStack = [ startCard ]
             Players = updatedPlayers
             Status = Live }
+    | Live, ProcessPlayerAction(PlayHand hand) ->
+        // Ensure the cards come from the correct player i.e. the current turn
+        let currentPlayer = state.Players[state.PlayerTurn]
+        // Add more conditions for isValidHand
+        //  - Valid cards to begin with -> number, ordering
+        // Handle potential next steps from the played hand -> EnforcePick, Kickback, Jump
+        let isValidHand = List.forall (fun card -> contains card currentPlayer.Cards) hand
+
+        let removeElements originalList elementsToRemove =
+            originalList |> List.filter (fun x -> not (List.contains x elementsToRemove))
+
+        if isValidHand then
+            // Add the cards to the played stack and remove them from player cards
+            let currentPlayerCards = removeElements currentPlayer.Cards hand
+
+            let updatedCurrentPlayer =
+                { currentPlayer with
+                    Cards = currentPlayerCards }
+
+            let newPlayers =
+                List.map
+                    (fun player ->
+                        if player.Name = currentPlayer.Name then
+                            updatedCurrentPlayer
+                        else
+                            player)
+                    state.Players
+
+            let newStack = state.PlayedStack @ List.rev (hand)
+
+            { state with
+                PlayedStack = newStack
+                PlayerTurn = (state.PlayerTurn + 1) % List.length state.Players
+                Players = newPlayers }
+        else
+            state
+    // ...
+    // Proceed to the next player
+
     | _ -> state
 
 
