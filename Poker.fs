@@ -26,13 +26,15 @@ type Card = { Suit: Suit; Value: CardValue }
 type Deck = Card list
 
 type PlayerState =
+    | AwaitingCards
+    | Cardless
     | Normal
     | Kadi
 
 type Player =
-    { cards: Deck
-      name: string
-      state: PlayerState }
+    { Cards: Deck
+      Name: string
+      State: PlayerState }
 
 type GameAction =
     | Start of int
@@ -128,15 +130,14 @@ let inputToGameAction (inputList) : GameAction =
         match inputList with
         | head :: second :: _ ->
             match head, second with
-            | "start", num -> Start(num |> int)
+            | "start", num ->
+                printfn $"Creating game with {num} players..."
+                Start(num |> int)
             | "add_player", name -> AddPlayer name
-
             | (_, _) ->
                 printfn "Unknown command"
                 Unknown
         | head :: _ ->
-            printfn $"Only one command provided: {head}"
-
             match head with
             | "add_deck" -> AddDeck createDeck
             | other ->
@@ -161,18 +162,29 @@ let transition state action =
     | NotStarted, _ ->
         printfn $"Invalid action."
         state
-    | Lobby, _ -> state
-    | AwaitingDeck, _ -> state
+    | Lobby, AddPlayer(playerName) ->
+        // TODO: Add handling for existing player
+        let updatedPlayers =
+            { Name = playerName
+              Cards = []
+              State = AwaitingCards }
+            :: state.Players
+
+        let newStatus =
+            if List.length (updatedPlayers) < state.NumPlayers then
+                Lobby
+            else
+                AwaitingDeck
+        { state with
+            Status = newStatus
+            Players = updatedPlayers }
+
+    | AwaitingDeck, AddDeck(newDeck) ->
+        { state with
+            PickDeck = newDeck
+            Status = AwaitingPlayerCards }
     | AwaitingPlayerCards, _ -> state
     | _ -> state
-
-
-// Define the function that transitions between states
-// let transition state input =
-//     match state, input with
-//     | StateA, "next" -> StateB
-//     | StateB, "next" -> StateC
-//     | _, _ -> state // No transition on invalid input
 
 
 let rec runStateMachine state =
