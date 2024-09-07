@@ -202,8 +202,9 @@ let transition state action =
         state
 
     | AwaitingDeck, AddDeck(newDeck) ->
+        let shuffledDeck = List.randomShuffle newDeck
         { state with
-            PickDeck = newDeck
+            PickDeck = shuffledDeck
             Status = AwaitingPlayerCards }
     | AwaitingPlayerCards, DealCards ->
         let assignPlayerCards player deck =
