@@ -27,8 +27,8 @@ type Deck = Card list
 
 type PlayerState =
     | AwaitingCards
-    | Cardless
     | Normal
+    | Cardless
     | Kadi
 
 type Player =
@@ -210,7 +210,11 @@ let transition action state =
     | AwaitingPlayerCards, DealCards ->
         let assignPlayerCards player deck =
             let playerCards, remainingCards = List.splitAt 4 deck
-            { player with Cards = playerCards }, remainingCards
+
+            { player with
+                Cards = playerCards
+                State = Normal },
+            remainingCards
 
         // Loop over players, assigning them cards, and updating the deck
         let updatedPlayers, updatedDeck =
@@ -218,7 +222,9 @@ let transition action state =
 
         { state with
             PickDeck = updatedDeck
-            Players = updatedPlayers }
+            Players = updatedPlayers
+            Status = AwaitingStartCard
+             }
 
     | _ -> state
 
