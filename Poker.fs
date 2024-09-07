@@ -165,7 +165,7 @@ let inputToGameAction (inputList) : GameAction =
             printfn "The command list is empty"
             Unknown
 
-let transition state action =
+let transition action state =
     match state.Status, action with
     | NotStarted, Start(numPlayers) when numPlayers >= minPlayers && numPlayers <= maxPlayers ->
         { state with
@@ -203,6 +203,7 @@ let transition state action =
 
     | AwaitingDeck, AddDeck(newDeck) ->
         let shuffledDeck = List.randomShuffle newDeck
+
         { state with
             PickDeck = shuffledDeck
             Status = AwaitingPlayerCards }
@@ -231,6 +232,17 @@ let rec runStateMachine state =
         // Print the current state
         printfn "Current state: %A" state
 
+        // Automate a few of the initial commands
+        let forwardedState =
+            state
+            |> (transition (Start 2))
+            |> (transition (AddPlayer "kevin"))
+            |> (transition (AddPlayer "another one"))
+            |> (transition (AddDeck createDeck))
+            |> (transition DealCards)
+
+        printfn "Forwarded state: %A" forwardedState
+
         // Ask for user input
         printfn "Please enter the next command.."
         let input = System.Console.ReadLine()
@@ -239,7 +251,7 @@ let rec runStateMachine state =
         let gameAction = inputToGameAction (input.Split([| ' ' |]) |> Array.toList)
 
         // Compute the next state based on input
-        let nextState = transition state gameAction
+        let nextState = transition gameAction forwardedState
 
         // Recursively run the state machine with the new state
         runStateMachine nextState
