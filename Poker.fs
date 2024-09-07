@@ -92,9 +92,6 @@ let contains element list =
 let getFirstAllowedCard (deck: Deck) (blocklist: CardValue list) =
     List.find (fun card -> not (contains card.Value blocklist)) deck
 
-
-// let createDeck = () => cartesianProduct(suits, values);
-
 let threeDiamonds =
     { Suit = Suit.Diamonds
       Value = CardValue.Three }
@@ -112,3 +109,14 @@ let simpleDeck = [ threeDiamonds; fiveDiamonds ]
 printfn "Initial State: %A" initialState
 printfn "For list %A, contains card 3D is %b" simpleDeck (contains threeDiamonds simpleDeck)
 printfn "For list %A, contains card 7D is %b" simpleDeck (contains sevenDiamonds simpleDeck)
+
+let suits = [ Hearts; Diamonds; Spades; Flowers ]
+let values = [ Two; Three; Four; Five; Six; Seven; Eight; Nine; Ten; J; Q; K; A ]
+
+let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
+    let mergedLists =
+        List.map (fun suit -> List.map (fun value -> { Suit = suit; Value = value }) values) suits
+
+    List.concat mergedLists
+
+let createDeck = cartesianProduct suits values
