@@ -40,8 +40,8 @@ type GameAction =
     | Start of int
     | AddPlayer of string
     | AddDeck of Deck
-    // combine deal player cards and deal start cards into one action
-    | DealCard of Deck
+    // Deal cards to players and deal start card
+    | DealCards
     | Finish
     | Unknown
 
@@ -122,6 +122,23 @@ let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
 
 let createDeck = cartesianProduct suits values
 
+let mapReduce f initState list =
+    let rec loop acc state =
+        function
+        | [] -> (List.rev acc, state) // Return reversed list and final state
+        | x :: xs ->
+            let (mappedValue, newState) = f x state
+            loop (mappedValue :: acc) newState xs
+
+    loop [] initState list
+
+// let f x acc = (x * 2, acc + x)
+
+// let result = mapReduce f 0 [1; 2; 3; 4]
+
+// printfn "%A" result
+
+
 let inputToGameAction (inputList) : GameAction =
     if List.length inputList > 2 then
         printfn "Too many commands!!"
@@ -140,6 +157,7 @@ let inputToGameAction (inputList) : GameAction =
         | head :: _ ->
             match head with
             | "add_deck" -> AddDeck createDeck
+            | "deal_cards" -> DealCards
             | other ->
                 printfn $"Unknown command: {other}"
                 Unknown
@@ -175,15 +193,31 @@ let transition state action =
                 Lobby
             else
                 AwaitingDeck
+
         { state with
             Status = newStatus
             Players = updatedPlayers }
+    | Lobby, other ->
+        printfn $"Unsupported action: {other}"
+        state
 
     | AwaitingDeck, AddDeck(newDeck) ->
         { state with
             PickDeck = newDeck
             Status = AwaitingPlayerCards }
-    | AwaitingPlayerCards, _ -> state
+    | AwaitingPlayerCards, DealCards ->
+        let assignPlayerCards player deck =
+            let playerCards, remainingCards = List.splitAt 4 deck
+            { player with Cards = playerCards }, remainingCards
+
+        // Loop over players, assigning them cards, and updating the deck
+        let updatedPlayers, updatedDeck =
+            mapReduce assignPlayerCards state.PickDeck state.Players
+
+        { state with
+            PickDeck = updatedDeck
+            Players = updatedPlayers }
+
     | _ -> state
 
 
