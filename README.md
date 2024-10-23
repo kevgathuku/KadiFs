@@ -10,7 +10,7 @@ Starting off with Poker and the rest will be added with time.
 
 #### Console
 
-- To run the project, run `dotnet run`
+- To run the project, run `dotnet run --project DriverApp`
 - For now the project is driven through the CLI, but a web interface is coming soon!
 
 Available commands roughly match the game actions.
