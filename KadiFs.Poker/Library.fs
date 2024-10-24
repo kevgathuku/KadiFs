@@ -7,20 +7,30 @@ module Game =
         | Spades
         | Flowers
 
+    let parseSuit =
+        function
+        | 'H' -> Hearts
+        | 'S' -> Spades
+        | 'D' -> Diamonds
+        | 'C' -> Flowers
+        | _ -> failwith "Invalid suit"
+
     type CardValue =
-        | Two
-        | Three
-        | Four
-        | Five
-        | Six
-        | Seven
-        | Eight
-        | Nine
-        | Ten
-        | J
-        | Q
-        | K
-        | A
+        | Number of int
+        | Jack
+        | Queen
+        | King
+        | Ace
+
+    let parseValue =
+        function
+        | "A" -> Ace
+        | "K" -> King
+        | "Q" -> Queen
+        | "J" -> Jack
+        | "10" -> Number 10
+        | v when v.Length = 1 && System.Char.IsDigit(v.[0]) -> Number(int v)
+        | _ -> failwith "Invalid card value"
 
     [<StructuralComparison; StructuralEquality>]
     type Card = { Suit: Suit; Value: CardValue }
@@ -41,7 +51,7 @@ module Game =
     type PlayerAction =
         | PlayHand of Card list
         | AcceptPick
-        | NoCardsPick  // which is this one??
+        | NoCardsPick // which is this one??
         | Jump
         | Kickback
         | Kadi
@@ -79,10 +89,10 @@ module Game =
     let maxPlayers = 5
     let cardsToDeal = 4
 
-    let startBlocklist = [ K; Q; J; A; Two; Three; Eight ]
+    let startBlocklist = [ King; Queen; Jack; Ace; Number 2; Number 3; Number 8 ]
 
     // Remove 'A' from the startBlocklist
-    let finishBlocklist = List.where (fun elm -> not (elm = A)) startBlocklist
+    let finishBlocklist = List.where (fun elm -> not (elm = Ace)) startBlocklist
 
     let initialState =
         { Status = NotStarted
@@ -95,11 +105,11 @@ module Game =
     let getStartCard (deck: Deck) (blocklist: CardValue list) =
         List.find (fun card -> not (Utilities.contains card.Value blocklist)) deck
 
-    let threeDiamonds = { Suit = Diamonds; Value = Three }
+    let threeDiamonds = { Suit = Diamonds; Value = Number 3 }
 
-    let fiveDiamonds = { Suit = Diamonds; Value = Five }
+    let fiveDiamonds = { Suit = Diamonds; Value = Number 5 }
 
-    let sevenDiamonds = { Suit = Diamonds; Value = Seven }
+    let sevenDiamonds = { Suit = Diamonds; Value = Number 7 }
 
     let simpleDeck = [ threeDiamonds; fiveDiamonds ]
 
@@ -108,7 +118,28 @@ module Game =
     printfn "For list %A, contains card 7D is %b" simpleDeck (Utilities.contains sevenDiamonds simpleDeck)
 
     let suits = [ Hearts; Diamonds; Spades; Flowers ]
-    let values = [ Two; Three; Four; Five; Six; Seven; Eight; Nine; Ten; J; Q; K; A ]
+
+    let values =
+        [ Number 2
+          Number 3
+          Number 4
+          Number 5
+          Number 6
+          Number 7
+          Number 8
+          Number 9
+          Number 10
+          Jack
+          Queen
+          King
+          Ace ]
+
+    let parseCard (shorthand: string) =
+        let valuePart = shorthand.Substring(0, shorthand.Length - 1)
+        let suitPart = shorthand.[shorthand.Length - 1]
+
+        { Suit = parseSuit suitPart
+          Value = parseValue valuePart }
 
     let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
         let mergedLists =
