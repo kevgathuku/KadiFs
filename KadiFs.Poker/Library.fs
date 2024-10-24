@@ -105,18 +105,6 @@ module Game =
     let getStartCard (deck: Deck) (blocklist: CardValue list) =
         List.find (fun card -> not (Utilities.contains card.Value blocklist)) deck
 
-    let threeDiamonds = { Suit = Diamonds; Value = Number 3 }
-
-    let fiveDiamonds = { Suit = Diamonds; Value = Number 5 }
-
-    let sevenDiamonds = { Suit = Diamonds; Value = Number 7 }
-
-    let simpleDeck = [ threeDiamonds; fiveDiamonds ]
-
-
-    printfn "For list %A, contains card 3D is %b" simpleDeck (Utilities.contains threeDiamonds simpleDeck)
-    printfn "For list %A, contains card 7D is %b" simpleDeck (Utilities.contains sevenDiamonds simpleDeck)
-
     let suits = [ Hearts; Diamonds; Spades; Flowers ]
 
     let values =
@@ -156,7 +144,6 @@ module Game =
         (lastPlayed :: hand)
         |> Utilities.adjacentPairs
         |> List.forall (fun (lastCard, currentCard) -> isSameSuitOrNumber lastCard currentCard)
-
 
     let inputToGameAction (inputList) : GameAction =
         if List.length inputList > 2 then

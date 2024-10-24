@@ -20,16 +20,16 @@ let ``Game.finishBlocklist`` () =
 
 [<Fact>]
 let ``Game.isValidSuitOrNumber`` () =
-    let lastPlayed = threeDiamonds
-    let hand = [ fiveDiamonds; sevenDiamonds ]
+    let lastPlayed = "3D" |> parseCard
+    let hand = [ "5D"; "7D" ] |> List.map parseCard
     let result = isValidSuitOrNumber lastPlayed hand
 
     Assert.Equal(true, result)
 
 [<Fact>]
 let ``Game.isValidSuitOrNumber invalid`` () =
-    let lastPlayed = threeDiamonds
-    let hand = [ fiveDiamonds; { Value = Number 8; Suit = Hearts} ]
+    let lastPlayed = "3D" |> parseCard
+    let hand = [ "5D"; "8H" ] |> List.map parseCard
     let result = isValidSuitOrNumber lastPlayed hand
 
     Assert.Equal(false, result)
