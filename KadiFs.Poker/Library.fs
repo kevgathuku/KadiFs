@@ -91,7 +91,7 @@ module Game =
 
     let startBlocklist = [ King; Queen; Jack; Ace; Number 2; Number 3; Number 8 ]
 
-    // Remove 'A' from the startBlocklist
+    // startBlocklist excluding 'A'
     let finishBlocklist = List.where (fun elm -> not (elm = Ace)) startBlocklist
 
     let initialState =
@@ -157,6 +157,9 @@ module Game =
                     printfn $"Creating game with {num} players..."
                     Start(num |> int)
                 | "add_player", name -> AddPlayer name
+                | "play", lst ->
+                    let parsedCards = lst.Split([| ' ' |]) |> Seq.map parseCard
+                    ProcessPlayerAction(PlayHand(Seq.toList parsedCards))
                 | (_, _) ->
                     printfn "Unknown command"
                     Unknown
@@ -238,13 +241,15 @@ module Game =
         | Live, ProcessPlayerAction(PlayHand hand) ->
             // Ensure the cards come from the correct player i.e. the current turn
             let currentPlayer = state.Players[state.PlayerTurn]
+            let lastPlayedCard = List.head state.PlayedStack
 
-            let isValidHand =
+            let validPlayerCards hand =
                 List.forall (fun card -> Utilities.contains card currentPlayer.Cards) hand
 
+            let isAllowed = validPlayerCards hand && isValidSuitOrNumber lastPlayedCard hand
             // Add the rest of the checks
             //  - Valid cards to begin with -> number, ordering
-            if isValidHand then
+            if isAllowed then
                 // Add the cards to the played stack and remove them from player cards
                 let currentPlayerCards = Utilities.removeItems currentPlayer.Cards hand
 
@@ -261,7 +266,7 @@ module Game =
                                 player)
                         state.Players
 
-                let newStack = state.PlayedStack @ List.rev (hand)
+                let newStack = List.rev (hand) @ state.PlayedStack
 
                 { state with
                     PlayedStack = newStack
