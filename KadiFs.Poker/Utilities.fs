@@ -17,3 +17,8 @@ module Utilities =
     let removeItems originalList elementsToRemove =
         originalList |> List.filter (fun x -> not (List.contains x elementsToRemove))
 
+    let rec adjacentPairs lst =
+      match lst with
+      | a :: b :: rest -> (a, b) :: adjacentPairs (b :: rest)
+      | _ -> []
+

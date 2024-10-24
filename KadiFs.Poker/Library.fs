@@ -149,6 +149,14 @@ module Game =
 
     let createDeck = cartesianProduct suits values
 
+    let isSameSuitOrNumber first second =
+        first.Suit = second.Suit || first.Value = second.Value
+
+    let isValidSuitOrNumber lastPlayed hand =
+        (lastPlayed :: hand)
+        |> Utilities.adjacentPairs
+        |> List.forall (fun (lastCard, currentCard) -> isSameSuitOrNumber lastCard currentCard)
+
 
     let inputToGameAction (inputList) : GameAction =
         if List.length inputList > 2 then
@@ -243,13 +251,12 @@ module Game =
         | Live, ProcessPlayerAction(PlayHand hand) ->
             // Ensure the cards come from the correct player i.e. the current turn
             let currentPlayer = state.Players[state.PlayerTurn]
-            // Add more conditions for isValidHand
-            //  - Valid cards to begin with -> number, ordering
-            // Handle potential next steps from the played hand -> EnforcePick, Kickback, Jump
+
             let isValidHand =
                 List.forall (fun card -> Utilities.contains card currentPlayer.Cards) hand
 
-
+            // Add the rest of the checks
+            //  - Valid cards to begin with -> number, ordering
             if isValidHand then
                 // Add the cards to the played stack and remove them from player cards
                 let currentPlayerCards = Utilities.removeItems currentPlayer.Cards hand
