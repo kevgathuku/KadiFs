@@ -41,7 +41,7 @@ module Game =
     type PlayerAction =
         | PlayHand of Card list
         | AcceptPick
-        | NoCardsPick
+        | NoCardsPick  // which is this one??
         | Jump
         | Kickback
         | Kadi
@@ -85,36 +85,27 @@ module Game =
     let finishBlocklist = List.where (fun elm -> not (elm = A)) startBlocklist
 
     let initialState =
-        { Status = GameStatus.NotStarted
+        { Status = NotStarted
           NumPlayers = 0
           Players = []
           PickDeck = []
           PlayedStack = []
           PlayerTurn = 0 }
 
-    let contains element list =
-        List.exists (fun elem -> elem = element) list
-
     let getStartCard (deck: Deck) (blocklist: CardValue list) =
-        List.find (fun card -> not (contains card.Value blocklist)) deck
+        List.find (fun card -> not (Utilities.contains card.Value blocklist)) deck
 
-    let threeDiamonds =
-        { Suit = Suit.Diamonds
-          Value = CardValue.Three }
+    let threeDiamonds = { Suit = Diamonds; Value = Three }
 
-    let fiveDiamonds =
-        { Suit = Suit.Diamonds
-          Value = CardValue.Five }
+    let fiveDiamonds = { Suit = Diamonds; Value = Five }
 
-    let sevenDiamonds =
-        { Suit = Suit.Diamonds
-          Value = CardValue.Seven }
+    let sevenDiamonds = { Suit = Diamonds; Value = Seven }
 
     let simpleDeck = [ threeDiamonds; fiveDiamonds ]
 
 
-    printfn "For list %A, contains card 3D is %b" simpleDeck (contains threeDiamonds simpleDeck)
-    printfn "For list %A, contains card 7D is %b" simpleDeck (contains sevenDiamonds simpleDeck)
+    printfn "For list %A, contains card 3D is %b" simpleDeck (Utilities.contains threeDiamonds simpleDeck)
+    printfn "For list %A, contains card 7D is %b" simpleDeck (Utilities.contains sevenDiamonds simpleDeck)
 
     let suits = [ Hearts; Diamonds; Spades; Flowers ]
     let values = [ Two; Three; Four; Five; Six; Seven; Eight; Nine; Ten; J; Q; K; A ]
@@ -126,22 +117,6 @@ module Game =
         List.concat mergedLists
 
     let createDeck = cartesianProduct suits values
-
-    let mapReduce f initState list =
-        let rec loop acc state =
-            function
-            | [] -> (List.rev acc, state) // Return reversed list and final state
-            | x :: xs ->
-                let (mappedValue, newState) = f x state
-                loop (mappedValue :: acc) newState xs
-
-        loop [] initState list
-
-    // let f x acc = (x * 2, acc + x)
-
-    // let result = mapReduce f 0 [1; 2; 3; 4]
-
-    // printfn "%A" result
 
 
     let inputToGameAction (inputList) : GameAction =
@@ -222,7 +197,7 @@ module Game =
 
             // Loop over players, assigning them cards, and updating the deck
             let updatedPlayers, updatedDeck =
-                mapReduce assignPlayerCards state.PickDeck state.Players
+                Utilities.mapReduce assignPlayerCards state.PickDeck state.Players
 
             let startCard = getStartCard updatedDeck startBlocklist
 
@@ -240,20 +215,19 @@ module Game =
             // Add more conditions for isValidHand
             //  - Valid cards to begin with -> number, ordering
             // Handle potential next steps from the played hand -> EnforcePick, Kickback, Jump
-            let isValidHand = List.forall (fun card -> contains card currentPlayer.Cards) hand
+            let isValidHand =
+                List.forall (fun card -> Utilities.contains card currentPlayer.Cards) hand
 
-            let removeElements originalList elementsToRemove =
-                originalList |> List.filter (fun x -> not (List.contains x elementsToRemove))
 
             if isValidHand then
                 // Add the cards to the played stack and remove them from player cards
-                let currentPlayerCards = removeElements currentPlayer.Cards hand
+                let currentPlayerCards = Utilities.removeItems currentPlayer.Cards hand
 
                 let updatedCurrentPlayer =
                     { currentPlayer with
                         Cards = currentPlayerCards }
 
-                let newPlayers =
+                let updatedPlayers =
                     List.map
                         (fun player ->
                             if player.Name = currentPlayer.Name then
@@ -267,7 +241,7 @@ module Game =
                 { state with
                     PlayedStack = newStack
                     PlayerTurn = (state.PlayerTurn + 1) % List.length state.Players
-                    Players = newPlayers }
+                    Players = updatedPlayers }
             else
                 state
         // ...
