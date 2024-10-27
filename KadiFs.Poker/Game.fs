@@ -194,6 +194,7 @@ module Game =
             let optionalValidations =
                 // Check if valid question and answer
                 [ if containsQuestion hand then
+                      printfn "Contains Question. Validating..." |> ignore
                       isValidQuestionAnswer lastPlayedCard hand
                   else
                       true ]
@@ -222,6 +223,7 @@ module Game =
                     PlayerTurn = (state.PlayerTurn + 1) % List.length state.Players
                     Players = updatedPlayers }
             else
+                printfn "Cards not valid :("
                 state
         // ...
         // Proceed to the next player

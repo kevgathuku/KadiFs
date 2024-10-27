@@ -16,8 +16,9 @@ let inputToGameAction (inputList) : GameAction =
                 Start(num |> int)
             | "add_player", name -> AddPlayer name
             | "play", cards ->
-                let parsedCards = cards.Split([| ' ' |]) |> Seq.map parseCard
-                ProcessPlayerAction(PlayHand(Seq.toList parsedCards))
+                let parsedCards = cards.Split([| ' ' |]) |> Seq.map parseCard |> Seq.toList
+                printfn $"Parsed cards: {parsedCards}"
+                ProcessPlayerAction(PlayHand(parsedCards))
             | (_, _) ->
                 printfn "Unknown command"
                 Unknown

@@ -12,3 +12,10 @@ let ``Core.parseCard`` () =
 
     Assert.Equal(expected, shorthand)
     Assert.Equal(expected, shorthandUnicode)
+
+[<Fact>]
+let ``Core.parseCard Ten`` () =
+    let expected = { Suit = Hearts; Value = Number 10 }
+
+    Assert.Equal(expected, parseCard "10H")
+    Assert.Equal(expected, parseCard "10♥")
