@@ -11,9 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Core.fs" />
     <Compile Include="Utilities.fs" />
-    <Compile Include="Library.fs" />
-    <Compile Include="LibraryTests.fs" />
+    <Compile Include="Game.fs" />
+    <Compile Include="CoreTests.fs" />
+    <Compile Include="GameTests.fs" />
+    <Compile Include="UtilitiesTests.fs" />
   </ItemGroup>
 
   <ItemGroup>

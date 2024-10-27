@@ -1,31 +1,8 @@
 ﻿namespace KadiFs.Poker
 
+open KadiFs.Poker.Core
+
 module Game =
-    type Suit =
-        | Hearts
-        | Diamonds
-        | Spades
-        | Flowers
-
-    type CardValue =
-        | Two
-        | Three
-        | Four
-        | Five
-        | Six
-        | Seven
-        | Eight
-        | Nine
-        | Ten
-        | J
-        | Q
-        | K
-        | A
-
-    [<StructuralComparison; StructuralEquality>]
-    type Card = { Suit: Suit; Value: CardValue }
-
-    type Deck = Card list
 
     type PlayerState =
         | AwaitingCards
@@ -40,8 +17,9 @@ module Game =
 
     type PlayerAction =
         | PlayHand of Card list
+        | EnforcePick of int // Playing a card that forces the next player to pick
         | AcceptPick
-        | NoCardsPick  // which is this one??
+        | NoCardsPick // Player has no cards. Pick and go to next player
         | Jump
         | Kickback
         | Kadi
@@ -78,11 +56,9 @@ module Game =
     let minPlayers = 2
     let maxPlayers = 5
     let cardsToDeal = 4
-
-    let startBlocklist = [ K; Q; J; A; Two; Three; Eight ]
-
-    // Remove 'A' from the startBlocklist
-    let finishBlocklist = List.where (fun elm -> not (elm = A)) startBlocklist
+    let startBlocklist = [ King; Queen; Jack; Ace; Number 2; Number 3; Number 8 ]
+    // startBlocklist excluding 'A'
+    let finishBlocklist = List.where (fun elm -> not (elm = Ace)) startBlocklist
 
     let initialState =
         { Status = NotStarted
@@ -95,55 +71,23 @@ module Game =
     let getStartCard (deck: Deck) (blocklist: CardValue list) =
         List.find (fun card -> not (Utilities.contains card.Value blocklist)) deck
 
-    let threeDiamonds = { Suit = Diamonds; Value = Three }
+    let isValidSuitOrNumber lastPlayed hand =
+        (lastPlayed :: hand)
+        |> Utilities.adjacentPairs
+        |> List.forall (fun (lastCard, currentCard) -> Utilities.isSameSuitOrNumber lastCard currentCard)
 
-    let fiveDiamonds = { Suit = Diamonds; Value = Five }
+    let isQuestion card =
+        card.Value = Number 8 || card.Value = Queen
 
-    let sevenDiamonds = { Suit = Diamonds; Value = Seven }
+    let containsQuestion hand = List.exists isQuestion hand
 
-    let simpleDeck = [ threeDiamonds; fiveDiamonds ]
+    let isQuestionWithoutAnswer hand = List.forall isQuestion hand
 
-
-    printfn "For list %A, contains card 3D is %b" simpleDeck (Utilities.contains threeDiamonds simpleDeck)
-    printfn "For list %A, contains card 7D is %b" simpleDeck (Utilities.contains sevenDiamonds simpleDeck)
-
-    let suits = [ Hearts; Diamonds; Spades; Flowers ]
-    let values = [ Two; Three; Four; Five; Six; Seven; Eight; Nine; Ten; J; Q; K; A ]
-
-    let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
-        let mergedLists =
-            List.map (fun suit -> List.map (fun value -> { Suit = suit; Value = value }) values) suits
-
-        List.concat mergedLists
-
-    let createDeck = cartesianProduct suits values
-
-
-    let inputToGameAction (inputList) : GameAction =
-        if List.length inputList > 2 then
-            printfn "Too many commands!!"
-            Unknown
-        else
-            match inputList with
-            | head :: second :: _ ->
-                match head, second with
-                | "start", num ->
-                    printfn $"Creating game with {num} players..."
-                    Start(num |> int)
-                | "add_player", name -> AddPlayer name
-                | (_, _) ->
-                    printfn "Unknown command"
-                    Unknown
-            | head :: _ ->
-                match head with
-                | "add_deck" -> AddDeck createDeck
-                | "deal_cards" -> DealCards
-                | other ->
-                    printfn $"Unknown command: {other}"
-                    Unknown
-            | [] ->
-                printfn "The command list is empty"
-                Unknown
+    // TODO: Handle questions + pick card
+    let isValidQuestionAnswer lastPlayedCard hand =
+        containsQuestion hand
+        && not (isQuestionWithoutAnswer hand)
+        && isValidSuitOrNumber lastPlayedCard hand
 
     let transition action state =
         match state.Status, action with
@@ -209,17 +153,53 @@ module Game =
                 PlayedStack = [ startCard ]
                 Players = updatedPlayers
                 Status = Live }
+        | Live, ProcessPlayerAction(NoCardsPick) ->
+            // Assign a card to the current player from the deck
+            let cardToAssign = List.head state.PickDeck
+            let currentPlayer = state.Players[state.PlayerTurn]
+            let updatedPlayerCards = cardToAssign :: currentPlayer.Cards
+
+            let updatedCurrentPlayer =
+                { currentPlayer with
+                    Cards = updatedPlayerCards }
+
+            // Move on to the next player
+            let updatedPlayers =
+                List.map
+                    (fun player ->
+                        if player.Name = currentPlayer.Name then
+                            updatedCurrentPlayer
+                        else
+                            player)
+                    state.Players
+
+            let remainingDeck = List.tail state.PickDeck
+
+            { state with
+                PickDeck = remainingDeck
+                PlayerTurn = (state.PlayerTurn + 1) % state.NumPlayers
+                Players = updatedPlayers
+                Status = Live }
         | Live, ProcessPlayerAction(PlayHand hand) ->
             // Ensure the cards come from the correct player i.e. the current turn
             let currentPlayer = state.Players[state.PlayerTurn]
-            // Add more conditions for isValidHand
-            //  - Valid cards to begin with -> number, ordering
-            // Handle potential next steps from the played hand -> EnforcePick, Kickback, Jump
-            let isValidHand =
+            let lastPlayedCard = List.head state.PlayedStack
+
+            let validPlayerCards hand =
                 List.forall (fun card -> Utilities.contains card currentPlayer.Cards) hand
 
+            let coreValidations =
+                [ validPlayerCards hand; isValidSuitOrNumber lastPlayedCard hand ]
 
-            if isValidHand then
+            let optionalValidations =
+                // Check if valid question and answer
+                [ if containsQuestion hand then
+                      printfn "Contains Question. Validating..." |> ignore
+                      isValidQuestionAnswer lastPlayedCard hand
+                  else
+                      true ]
+
+            if List.forall id (coreValidations @ optionalValidations) then
                 // Add the cards to the played stack and remove them from player cards
                 let currentPlayerCards = Utilities.removeItems currentPlayer.Cards hand
 
@@ -236,49 +216,16 @@ module Game =
                                 player)
                         state.Players
 
-                let newStack = state.PlayedStack @ List.rev (hand)
+                let newStack = List.rev (hand) @ state.PlayedStack
 
                 { state with
                     PlayedStack = newStack
                     PlayerTurn = (state.PlayerTurn + 1) % List.length state.Players
                     Players = updatedPlayers }
             else
+                printfn "Cards not valid :("
                 state
         // ...
         // Proceed to the next player
 
         | _ -> state
-
-
-    let rec runStateMachine state =
-        match state.Status with
-        | GameOver ->
-            printfn "Game over. Exiting."
-            0
-        | _ ->
-            // Print the current state
-            printfn "Current state: %A" state
-
-            // Automate a few of the initial commands
-            let forwardedState =
-                state
-                |> (transition (Start 2))
-                |> (transition (AddPlayer "kevin"))
-                |> (transition (AddPlayer "another one"))
-                |> (transition (AddDeck createDeck))
-                |> (transition DealCards)
-
-            printfn "Forwarded state: %A" forwardedState
-
-            // Ask for user input
-            printfn "Please enter the next command.."
-            let input = System.Console.ReadLine()
-
-            // Translate the input to an action
-            let gameAction = inputToGameAction (input.Split([| ' ' |]) |> Array.toList)
-
-            // Compute the next state based on input
-            let nextState = transition gameAction forwardedState
-
-            // Recursively run the state machine with the new state
-            runStateMachine nextState
