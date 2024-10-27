@@ -1,4 +1,4 @@
-module LibraryTests
+module GameTests
 
 open Xunit
 open KadiFs.Poker
