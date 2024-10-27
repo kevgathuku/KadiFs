@@ -2,7 +2,7 @@ module LibraryTests
 
 open Xunit
 open KadiFs.Poker
-open KadiFs.Poker.Game
+open KadiFs.Poker.Core
 
 [<Fact>]
 let ``Game.minPlayers`` () =
@@ -22,7 +22,7 @@ let ``Game.finishBlocklist`` () =
 let ``Game.isValidSuitOrNumber`` () =
     let lastPlayed = "3D" |> parseCard
     let hand = [ "5D"; "7D" ] |> List.map parseCard
-    let result = isValidSuitOrNumber lastPlayed hand
+    let result = Game.isValidSuitOrNumber lastPlayed hand
 
     Assert.Equal(true, result)
 
@@ -30,7 +30,7 @@ let ``Game.isValidSuitOrNumber`` () =
 let ``Game.isValidSuitOrNumber invalid`` () =
     let lastPlayed = "3D" |> parseCard
     let hand = [ "5D"; "8H" ] |> List.map parseCard
-    let result = isValidSuitOrNumber lastPlayed hand
+    let result = Game.isValidSuitOrNumber lastPlayed hand
 
     Assert.Equal(false, result)
 

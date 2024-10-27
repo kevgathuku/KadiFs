@@ -1,6 +1,6 @@
 ﻿namespace KadiFs.Poker
 
-module Game =
+module Core =
     type Suit =
         | Hearts
         | Diamonds
@@ -37,6 +37,16 @@ module Game =
 
     type Deck = Card list
 
+    let parseCard (shorthand: string) =
+        let valuePart = shorthand.Substring(0, shorthand.Length - 1)
+        let suitPart = shorthand.[shorthand.Length - 1]
+
+        { Suit = parseSuit suitPart
+          Value = parseValue valuePart }
+
+module Game =
+    open Core
+
     type PlayerState =
         | AwaitingCards
         | Normal
@@ -50,8 +60,9 @@ module Game =
 
     type PlayerAction =
         | PlayHand of Card list
+        | EnforcePick of int // Playing a card that forces the next player to pick
         | AcceptPick
-        | NoCardsPick // which is this one??
+        | NoCardsPick // Player has no cards. Pick and go to next player
         | Jump
         | Kickback
         | Kadi
@@ -122,12 +133,7 @@ module Game =
           King
           Ace ]
 
-    let parseCard (shorthand: string) =
-        let valuePart = shorthand.Substring(0, shorthand.Length - 1)
-        let suitPart = shorthand.[shorthand.Length - 1]
 
-        { Suit = parseSuit suitPart
-          Value = parseValue valuePart }
 
     let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
         let mergedLists =

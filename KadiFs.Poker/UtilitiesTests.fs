@@ -2,7 +2,7 @@ module UtilitiesTests
 
 open Xunit
 open KadiFs.Poker
-open KadiFs.Poker.Game
+open KadiFs.Poker.Core
 
 let threeDiamonds = parseCard "3D"
 let fiveDiamonds = parseCard "5D"
