@@ -1,51 +1,8 @@
 ﻿namespace KadiFs.Poker
 
-module Core =
-    type Suit =
-        | Hearts
-        | Diamonds
-        | Spades
-        | Flowers
-
-    let parseSuit =
-        function
-        | 'H' -> Hearts
-        | 'S' -> Spades
-        | 'D' -> Diamonds
-        | 'C' -> Flowers
-        | _ -> failwith "Invalid suit"
-
-    type CardValue =
-        | Number of int
-        | Jack
-        | Queen
-        | King
-        | Ace
-
-    let parseValue =
-        function
-        | "A" -> Ace
-        | "K" -> King
-        | "Q" -> Queen
-        | "J" -> Jack
-        | "10" -> Number 10
-        | v when v.Length = 1 && System.Char.IsDigit(v.[0]) -> Number(int v)
-        | _ -> failwith "Invalid card value"
-
-    [<StructuralComparison; StructuralEquality>]
-    type Card = { Suit: Suit; Value: CardValue }
-
-    type Deck = Card list
-
-    let parseCard (shorthand: string) =
-        let valuePart = shorthand.Substring(0, shorthand.Length - 1)
-        let suitPart = shorthand.[shorthand.Length - 1]
-
-        { Suit = parseSuit suitPart
-          Value = parseValue valuePart }
+open KadiFs.Poker.Core
 
 module Game =
-    open Core
 
     type PlayerState =
         | AwaitingCards
@@ -99,9 +56,7 @@ module Game =
     let minPlayers = 2
     let maxPlayers = 5
     let cardsToDeal = 4
-
     let startBlocklist = [ King; Queen; Jack; Ace; Number 2; Number 3; Number 8 ]
-
     // startBlocklist excluding 'A'
     let finishBlocklist = List.where (fun elm -> not (elm = Ace)) startBlocklist
 
@@ -116,40 +71,11 @@ module Game =
     let getStartCard (deck: Deck) (blocklist: CardValue list) =
         List.find (fun card -> not (Utilities.contains card.Value blocklist)) deck
 
-    let suits = [ Hearts; Diamonds; Spades; Flowers ]
-
-    let values =
-        [ Number 2
-          Number 3
-          Number 4
-          Number 5
-          Number 6
-          Number 7
-          Number 8
-          Number 9
-          Number 10
-          Jack
-          Queen
-          King
-          Ace ]
-
-
-
-    let cartesianProduct (suits: Suit list) (values: CardValue list) : Deck =
-        let mergedLists =
-            List.map (fun suit -> List.map (fun value -> { Suit = suit; Value = value }) values) suits
-
-        List.concat mergedLists
-
-    let createDeck = cartesianProduct suits values
-
-    let isSameSuitOrNumber first second =
-        first.Suit = second.Suit || first.Value = second.Value
 
     let isValidSuitOrNumber lastPlayed hand =
         (lastPlayed :: hand)
         |> Utilities.adjacentPairs
-        |> List.forall (fun (lastCard, currentCard) -> isSameSuitOrNumber lastCard currentCard)
+        |> List.forall (fun (lastCard, currentCard) -> Utilities.isSameSuitOrNumber lastCard currentCard)
 
     let inputToGameAction (inputList) : GameAction =
         if List.length inputList > 2 then
@@ -171,7 +97,7 @@ module Game =
                     Unknown
             | head :: _ ->
                 match head with
-                | "add_deck" -> AddDeck createDeck
+                | "add_deck" -> AddDeck Utilities.createDeck
                 | "deal_cards" -> DealCards
                 | other ->
                     printfn $"Unknown command: {other}"
@@ -301,7 +227,7 @@ module Game =
                 |> (transition (Start 2))
                 |> (transition (AddPlayer "kevin"))
                 |> (transition (AddPlayer "another one"))
-                |> (transition (AddDeck createDeck))
+                |> (transition (AddDeck Utilities.createDeck))
                 |> (transition DealCards)
 
             printfn "Forwarded state: %A" forwardedState
