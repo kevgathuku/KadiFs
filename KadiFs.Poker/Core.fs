@@ -51,3 +51,5 @@ module Core =
 
         { Suit = parseSuit suitPart
           Value = parseValue valuePart }
+
+    let parseCards hand = List.map parseCard hand

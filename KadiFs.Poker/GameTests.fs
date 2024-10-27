@@ -64,7 +64,6 @@ let ``Game.isValidQuestionAnswer`` () =
     let lastPlayedCard = parseCard "6♥"
 
     let checkHand = isValidQuestionAnswer lastPlayedCard
-    let parseCards hand = List.map parseCard hand
 
     Assert.Equal(true, checkHand (parseCards [ "8♥"; "2♥" ]))
     Assert.Equal(true, checkHand (parseCards [ "8♥"; "Q♥"; "4♥"; "4♦" ]))
