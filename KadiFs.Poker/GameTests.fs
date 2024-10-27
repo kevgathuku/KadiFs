@@ -69,15 +69,15 @@ let ``Game.containsQuestion`` () =
 
 [<Fact>]
 let ``Game.ProcessPlayerAction NoCardsPick`` () =
-    let pickDeck = [ "AS"; "4S"; "3D"; "2F" ] |> List.map parseCard
+    let pickDeck = [ "A♠"; "4♠"; "3♦"; "2♣" ] |> List.map parseCard
 
     let playerOne: Player =
-        { Cards = [ "JH"; "KS"; "9F"; "8F" ] |> List.map parseCard
+        { Cards = [ "J♥"; "K♠"; "9♣"; "8♣" ] |> List.map parseCard
           Name = "king"
           State = Normal }
 
     let playerTwo: Player =
-        { Cards = [ "3F"; "10H"; "KH"; "7D" ] |> List.map parseCard
+        { Cards = [ "3♣"; "10♥"; "K♥"; "7♦" ] |> List.map parseCard
           Name = "kaka"
           State = Normal }
 
@@ -87,7 +87,7 @@ let ``Game.ProcessPlayerAction NoCardsPick`` () =
             NumPlayers = 2
             PickDeck = pickDeck
             PlayerTurn = 0
-            PlayedStack = [ "7H" ] |> List.map parseCard
+            PlayedStack = [ "7♥" ] |> List.map parseCard
             Players = [ playerOne; playerTwo ] }
 
     let updatedPlayerOne =

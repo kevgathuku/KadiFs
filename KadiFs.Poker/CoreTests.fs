@@ -6,6 +6,9 @@ open KadiFs.Poker.Core
 [<Fact>]
 let ``Core.parseCard`` () =
     let expected = { Suit = Hearts; Value = Jack }
-    let result = parseCard "JH"
+    
+    let shorthand = parseCard "JH"
+    let shorthandUnicode = parseCard "J♥"
 
-    Assert.Equal(expected, result)
+    Assert.Equal(expected, shorthand)
+    Assert.Equal(expected, shorthandUnicode)

@@ -10,8 +10,12 @@ module Core =
     let parseSuit =
         function
         | 'H' -> Hearts
+        | '♥' -> Hearts
         | 'S' -> Spades
+        | '♠' -> Spades
         | 'D' -> Diamonds
+        | '♦' -> Diamonds
+        | '♣' -> Flowers
         | 'F' -> Flowers
         | _ -> failwith "Invalid suit"
 
