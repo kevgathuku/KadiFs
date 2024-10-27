@@ -83,8 +83,11 @@ module Game =
 
     let isQuestionWithoutAnswer hand = List.forall isQuestion hand
 
+    // TODO: Handle questions + pick card
     let isValidQuestionAnswer lastPlayedCard hand =
-        containsQuestion hand && not (isQuestionWithoutAnswer hand) && isValidSuitOrNumber lastPlayedCard hand
+        containsQuestion hand
+        && not (isQuestionWithoutAnswer hand)
+        && isValidSuitOrNumber lastPlayedCard hand
 
     let transition action state =
         match state.Status, action with
@@ -185,10 +188,17 @@ module Game =
             let validPlayerCards hand =
                 List.forall (fun card -> Utilities.contains card currentPlayer.Cards) hand
 
-            let isAllowed = validPlayerCards hand && isValidSuitOrNumber lastPlayedCard hand
-            // Add the rest of the checks
-            //  - Valid cards to begin with -> number, ordering
-            if isAllowed then
+            let coreValidations =
+                [ validPlayerCards hand; isValidSuitOrNumber lastPlayedCard hand ]
+
+            let optionalValidations =
+                // Check if valid question and answer
+                [ if containsQuestion hand then
+                      isValidQuestionAnswer lastPlayedCard hand
+                  else
+                      true ]
+
+            if List.forall id (coreValidations @ optionalValidations) then
                 // Add the cards to the played stack and remove them from player cards
                 let currentPlayerCards = Utilities.removeItems currentPlayer.Cards hand
 
