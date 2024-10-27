@@ -71,11 +71,13 @@ module Game =
     let getStartCard (deck: Deck) (blocklist: CardValue list) =
         List.find (fun card -> not (Utilities.contains card.Value blocklist)) deck
 
-
     let isValidSuitOrNumber lastPlayed hand =
         (lastPlayed :: hand)
         |> Utilities.adjacentPairs
         |> List.forall (fun (lastCard, currentCard) -> Utilities.isSameSuitOrNumber lastCard currentCard)
+
+    let containsQuestion hand =
+        List.exists (fun card -> card.Value = Number 8 || card.Value = Queen) hand
 
 
     let transition action state =

@@ -40,3 +40,27 @@ let ``Game.parseCard`` () =
     let expected = { Value = Number 7; Suit = Hearts }
 
     Assert.Equal(expected, result)
+
+[<Fact>]
+let ``Game.containsQuestion`` () =
+    let withEightHearts = [ "8H" ] |> List.map parseCard
+    let withEightDiamonds = [ "8D" ] |> List.map parseCard
+    let withEightFlowers = [ "8F" ] |> List.map parseCard
+    let withEightSpades = [ "8S" ] |> List.map parseCard
+
+    let withQueenHearts = [ "QH" ] |> List.map parseCard
+    let withQueenDiamonds = [ "QD" ] |> List.map parseCard
+    let withQueenFlowers = [ "QF" ] |> List.map parseCard
+    let withQueenSpades = [ "QS" ] |> List.map parseCard
+
+    let candidates =
+        [ withEightHearts
+          withEightDiamonds
+          withEightFlowers
+          withEightSpades
+          withQueenHearts
+          withQueenDiamonds
+          withQueenFlowers
+          withQueenSpades ]
+
+    Assert.Equal(true, List.forall Game.containsQuestion candidates)

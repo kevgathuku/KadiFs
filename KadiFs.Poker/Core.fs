@@ -12,7 +12,7 @@ module Core =
         | 'H' -> Hearts
         | 'S' -> Spades
         | 'D' -> Diamonds
-        | 'C' -> Flowers
+        | 'F' -> Flowers
         | _ -> failwith "Invalid suit"
 
     type CardValue =
