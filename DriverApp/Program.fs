@@ -25,6 +25,7 @@ let inputToGameAction (inputList) : GameAction =
             match head with
             | "add_deck" -> AddDeck createDeck
             | "deal_cards" -> DealCards
+            | "pick" -> ProcessPlayerAction(NoCardsPick)
             | other ->
                 printfn $"Unknown command: {other}"
                 Unknown

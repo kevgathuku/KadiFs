@@ -41,9 +41,9 @@ module Core =
         let valuePart = shorthand.Substring(0, shorthand.Length - 1)
         let suitPart = shorthand.[shorthand.Length - 1]
 
-        printfn $"Parsing {shorthand}..."
+        printfn $"Parsing chars: {shorthand}..."
         printfn $"Parsed Value: {valuePart}"
-        printfn "Parsed Suit: {suitPart}"
+        printfn $"Parsed Suit: {suitPart}"
 
         { Suit = parseSuit suitPart
           Value = parseValue valuePart }

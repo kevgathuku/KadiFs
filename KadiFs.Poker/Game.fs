@@ -144,6 +144,29 @@ module Game =
                 PlayedStack = [ startCard ]
                 Players = updatedPlayers
                 Status = Live }
+        | Live, ProcessPlayerAction(NoCardsPick) ->
+            // Assign a card to the current player from the deck
+            let cardToAssign = List.head state.PickDeck
+            let currentPlayer = state.Players[state.PlayerTurn]
+            let updatedPlayerCards = cardToAssign :: currentPlayer.Cards
+            let updatedCurrentPlayer = {currentPlayer with Cards = updatedPlayerCards}
+
+            // Move on to the next player
+            let updatedPlayers =
+                List.map
+                    (fun player ->
+                        if player.Name = currentPlayer.Name then
+                            updatedCurrentPlayer
+                        else
+                            player)
+                    state.Players
+
+            let remainingDeck = List.tail state.PickDeck
+            { state with
+                PickDeck = remainingDeck
+                PlayerTurn = (state.PlayerTurn + 1) % state.NumPlayers
+                Players = updatedPlayers
+                Status = Live }
         | Live, ProcessPlayerAction(PlayHand hand) ->
             // Ensure the cards come from the correct player i.e. the current turn
             let currentPlayer = state.Players[state.PlayerTurn]

@@ -3,18 +3,19 @@ module GameTests
 open Xunit
 open KadiFs.Poker
 open KadiFs.Poker.Core
+open KadiFs.Poker.Game
 
 [<Fact>]
 let ``Game.minPlayers`` () =
     let expected = 2
-    let result = Game.minPlayers
+    let result = minPlayers
 
     Assert.Equal(expected, result)
 
 [<Fact>]
 let ``Game.finishBlocklist`` () =
     let expected = [ King; Queen; Jack; Number 2; Number 3; Number 8 ]
-    let result = Game.finishBlocklist
+    let result = finishBlocklist
 
     Assert.Equal<CardValue list>(expected, result)
 
@@ -64,3 +65,43 @@ let ``Game.containsQuestion`` () =
           withQueenSpades ]
 
     Assert.Equal(true, List.forall Game.containsQuestion candidates)
+
+
+[<Fact>]
+let ``Game.ProcessPlayerAction NoCardsPick`` () =
+    let pickDeck = [ "AS"; "4S"; "3D"; "2F" ] |> List.map parseCard
+
+    let playerOne: Player =
+        { Cards = [ "JH"; "KS"; "9F"; "8F" ] |> List.map parseCard
+          Name = "king"
+          State = Normal }
+
+    let playerTwo: Player =
+        { Cards = [ "3F"; "10H"; "KH"; "7D" ] |> List.map parseCard
+          Name = "kaka"
+          State = Normal }
+
+    let gameState =
+        { initialState with
+            Status = Live
+            NumPlayers = 2
+            PickDeck = pickDeck
+            PlayerTurn = 0
+            PlayedStack = [ "7H" ] |> List.map parseCard
+            Players = [ playerOne; playerTwo ] }
+
+    let updatedPlayerOne =
+        { playerOne with
+            Cards = (List.head pickDeck :: playerOne.Cards) }
+
+    let action = ProcessPlayerAction(NoCardsPick)
+
+    let expected =
+        { gameState with
+            Players = [ updatedPlayerOne; playerTwo ]
+            PlayerTurn = 1
+            PickDeck = List.tail pickDeck }
+
+    let result = transition action gameState
+
+    Assert.Equal(expected, result)
