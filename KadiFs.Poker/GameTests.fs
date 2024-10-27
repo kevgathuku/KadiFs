@@ -31,16 +31,9 @@ let ``Game.isValidSuitOrNumber`` () =
 let ``Game.isValidSuitOrNumber invalid`` () =
     let lastPlayed = "3D" |> parseCard
     let hand = [ "5D"; "8H" ] |> List.map parseCard
-    let result = Game.isValidSuitOrNumber lastPlayed hand
+    let result = isValidSuitOrNumber lastPlayed hand
 
     Assert.Equal(false, result)
-
-[<Fact>]
-let ``Game.parseCard`` () =
-    let result = parseCard "7H"
-    let expected = { Value = Number 7; Suit = Hearts }
-
-    Assert.Equal(expected, result)
 
 [<Fact>]
 let ``Game.containsQuestion`` () =
@@ -64,7 +57,22 @@ let ``Game.containsQuestion`` () =
           withQueenFlowers
           withQueenSpades ]
 
-    Assert.Equal(true, List.forall Game.containsQuestion candidates)
+    Assert.Equal(true, List.forall containsQuestion candidates)
+
+[<Fact>]
+let ``Game.isValidQuestionAnswer`` () =
+    let lastPlayedCard = parseCard "6♥"
+
+    let checkHand = isValidQuestionAnswer lastPlayedCard
+    let parseCards hand = List.map parseCard hand
+
+    Assert.Equal(true, checkHand (parseCards [ "8♥"; "2♥" ]))
+    Assert.Equal(true, checkHand (parseCards [ "8♥"; "Q♥"; "4♥"; "4♦" ]))
+
+    Assert.Equal(false, checkHand (parseCards [ "8♥"; "Q♥" ]))
+    Assert.Equal(false, checkHand (parseCards [ "Q♥"; "Q♦" ]))
+    Assert.Equal(false, checkHand (parseCards [ "7♥" ])) // No question
+    Assert.Equal(false, checkHand (parseCards [ "7♦" ])) // Non-matching suits
 
 
 [<Fact>]

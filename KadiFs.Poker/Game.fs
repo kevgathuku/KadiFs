@@ -76,9 +76,15 @@ module Game =
         |> Utilities.adjacentPairs
         |> List.forall (fun (lastCard, currentCard) -> Utilities.isSameSuitOrNumber lastCard currentCard)
 
-    let containsQuestion hand =
-        List.exists (fun card -> card.Value = Number 8 || card.Value = Queen) hand
+    let isQuestion card =
+        card.Value = Number 8 || card.Value = Queen
 
+    let containsQuestion hand = List.exists isQuestion hand
+
+    let isQuestionWithoutAnswer hand = List.forall isQuestion hand
+
+    let isValidQuestionAnswer lastPlayedCard hand =
+        containsQuestion hand && not (isQuestionWithoutAnswer hand) && isValidSuitOrNumber lastPlayedCard hand
 
     let transition action state =
         match state.Status, action with
@@ -149,7 +155,10 @@ module Game =
             let cardToAssign = List.head state.PickDeck
             let currentPlayer = state.Players[state.PlayerTurn]
             let updatedPlayerCards = cardToAssign :: currentPlayer.Cards
-            let updatedCurrentPlayer = {currentPlayer with Cards = updatedPlayerCards}
+
+            let updatedCurrentPlayer =
+                { currentPlayer with
+                    Cards = updatedPlayerCards }
 
             // Move on to the next player
             let updatedPlayers =
@@ -162,6 +171,7 @@ module Game =
                     state.Players
 
             let remainingDeck = List.tail state.PickDeck
+
             { state with
                 PickDeck = remainingDeck
                 PlayerTurn = (state.PlayerTurn + 1) % state.NumPlayers
